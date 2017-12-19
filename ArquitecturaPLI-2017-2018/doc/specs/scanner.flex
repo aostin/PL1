@@ -25,7 +25,7 @@ import es.uned.lsi.compiler.lexical.LexicalErrorManager;
 
 %eof{
 	if (commentCount!=0) {
-    			lexicalErrorManager.lexicalError("Comentarios no balanceados. Compruebe la línea " + commentLinea );
+    			lexicalErrorManager.lexicalError("Comentarios no balanceados. Compruebe la lï¿½nea " + commentLinea );
     		}
 
 %eof}
@@ -83,6 +83,15 @@ DIGITO=[0-9]
                            token.setLexema (yytext ());
            			       return token;
                         }
+                   
+      ".."                {  
+                           Token token = new Token (sym.PUNTOS);
+                           token.setLine (yyline + 1);
+                           token.setColumn (yycolumn + 1);
+                           token.setLexema (yytext ());
+           			       return token;
+                        }
+                        
  
      AND               {  
                            Token token = new Token (sym.AND);
@@ -404,7 +413,7 @@ DIGITO=[0-9]
 
 {fin} {}
     
-    // error en caso de coincidir con ningún patrón
+    // error en caso de coincidir con ningï¿½n patrï¿½n
 	[^]     
                         {                                               
                            LexicalError error = new LexicalError ();
