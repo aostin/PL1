@@ -109,6 +109,8 @@ non terminal			final;
 non terminal 			seccionConstantes;
 non terminal			seccionTipos;
 non terminal			seccionVariables;
+non terminal			seccionSubprogramas;
+non terminal			listaDeclaraciones;
 non terminal			declaracionConstantes;
 non terminal			declaracionConstante;
 non terminal			declaracionTipos;
@@ -118,6 +120,9 @@ non terminal			declaracionVariables;
 non terminal			valorLiteral;
 non terminal			tipoPrimitivo;
 non terminal			listaId;
+non terminal			expresiones;
+non terminal			expresion;
+non terminal 			operador;
 
 // ...
 
@@ -153,7 +158,9 @@ axiom ::= principio medio ;
 
 principio ::= MODULE ID PCOMA;
 
-medio ::= seccionConstantes | seccionTipos | seccionConstantes seccionTipos | seccionVariables | seccionConstantes seccionVariables | seccionTipos seccionVariables | seccionConstantes seccionTipos seccionVariables;
+medio ::= listaDeclaraciones  | seccionSubprogramas | listaDeclaraciones seccionSubprogramas;
+
+listaDeclaraciones ::= seccionConstantes | seccionTipos | seccionConstantes seccionTipos | seccionVariables | seccionConstantes seccionVariables | seccionTipos seccionVariables | seccionConstantes seccionTipos seccionVariables;
 
 seccionConstantes ::= CONST declaracionConstantes;
 
@@ -178,3 +185,7 @@ declaracionVariables ::= declaracionVariable | declaracionVariable declaracionVa
 declaracionVariable ::= listaId DOSPUNTOS tipoPrimitivo PCOMA | listaId DOSPUNTOS ID PCOMA;
 listaId ::= ID | ID COMA listaId;
 
+seccionSubprogramas ::= expresiones PCOMA;
+expresiones ::= APAREN expresiones CPAREN | expresion |  expresion operador expresiones ;
+expresion ::= NOT valorLiteral | valorLiteral operador valorLiteral |operador valorLiteral;
+operador ::= POR | AND | MENOS | OR | MAYOR | IGUAL;
