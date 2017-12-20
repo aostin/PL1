@@ -92,6 +92,16 @@ DIGITO=[0-9]
            			       return token;
                         }
                         
+      "."                {  
+                           Token token = new Token (sym.PUNTO);
+                           token.setLine (yyline + 1);
+                           token.setColumn (yycolumn + 1);
+                           token.setLexema (yytext ());
+           			       return token;
+                        }
+                                         
+      
+                        
  
      AND               {  
                            Token token = new Token (sym.AND);
