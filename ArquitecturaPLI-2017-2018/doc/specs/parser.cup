@@ -120,14 +120,15 @@ non terminal			declaracionVariable;
 non terminal			declaracionVariables;
 non terminal			valorLiteral;
 non terminal			tipoPrimitivo;
+non terminal			tipoDato;
 non terminal			listaId;
 non terminal			expresiones;
 non terminal			expresion;
 non terminal 			operador;
 non terminal 			valorExpresion;
-non terminal			pIzquierda;
+non terminal			expresionCompuesta;
 non terminal			pDerecha;
-
+non terminal			parentesis;
 // ...
 
 
@@ -137,6 +138,8 @@ precedence right NOT;
 precedence left POR, AND;
 precedence left MENOS, OR;
 precedence left MAYOR, IGUAL;
+precedence left ID;
+
 // ...
 
 // Declaraci�n de reglas de producci�n
@@ -172,9 +175,9 @@ listaDeclaraciones ::= seccionConstantes | seccionTipos | seccionConstantes secc
 
 seccionConstantes ::= CONST declaracionConstantes;
 
-declaracionConstantes ::= ID IGUAL valorLiteral PCOMA declaracionConstantes| ID IGUAL valorLiteral PCOMA ;
+declaracionConstantes ::= declaracionConstante declaracionConstantes| declaracionConstante ;
 
-//declaracionConstante ::= ID IGUAL valorLiteral PCOMA;
+declaracionConstante ::= ID IGUAL valorLiteral PCOMA;
 
 valorLiteral ::= TRUE | FALSE | CDIGITO;
 
@@ -189,16 +192,16 @@ tipoPrimitivo ::= INTEGER | BOOLEAN;
 
 seccionVariables ::= VAR declaracionVariables;
 
-//declaracionVariables ::= declaracionVariable | declaracionVariable declaracionVariables;
-declaracionVariables ::= ID DOSPUNTOS pDerecha | ID COMA declaracionVariables;
-pDerecha ::= DOSPUNTOS ID PCOMA | DOSPUNTOS tipoPrimitivo PCOMA;
-//declaracionVariable ::= ID DOSPUNTOS pDerecha | ID COMA declaracionVariable;
-//listaId ::= ID | ID COMA listaId;
+declaracionVariables ::= declaracionVariable PCOMA | declaracionVariable PCOMA declaracionVariables;
+declaracionVariable ::= ID DOSPUNTOS tipoDato | ID COMA declaracionVariable;
+tipoDato::= ID | tipoPrimitivo;
 
-seccionSubprogramas ::= expresiones PCOMA  | expresiones PCOMA seccionSubprogramas;
-expresiones ::= APAREN expresiones CPAREN | expresion |  expresion operador expresiones;
-expresion ::= NOT valorExpresion | valorExpresion expresiones  | valorExpresion ;
+seccionSubprogramas ::= expresionCompuesta PCOMA  | expresionCompuesta PCOMA seccionSubprogramas;
+
+expresionCompuesta::= expresion operador expresion;
+expresion::= valorExpresion | expresionCompuesta | parentesis;
+parentesis::= APAREN parentesis expresion CPAREN | APAREN expresion CPAREN;
+
 operador ::= POR | AND | MENOS | OR | MAYOR | IGUAL;
-valorExpresion ::= ID operador | valorLiteral operador;
+valorExpresion ::= ID | valorLiteral;
 
-//
