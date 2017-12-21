@@ -129,6 +129,15 @@ non terminal 			valorExpresion;
 non terminal			expresionCompuesta;
 non terminal			pDerecha;
 non terminal			parentesis;
+non terminal			corchetes;
+non terminal			accesoVector;
+non terminal			llamadaFuncion;
+non terminal			listaValores;
+non terminal			sentencias;
+non terminal			sentenciaAsignacion;
+non terminal			sentenciasIF;
+non terminal			sentenciasFOR;
+non terminal			cuerpo;
 // ...
 
 
@@ -138,7 +147,6 @@ precedence right NOT;
 precedence left POR, AND;
 precedence left MENOS, OR;
 precedence left MAYOR, IGUAL;
-precedence left ID;
 
 // ...
 
@@ -169,7 +177,7 @@ axiom ::= principio medio ;
 
 principio ::= MODULE ID PCOMA ;
 
-medio ::= listaDeclaraciones  | seccionSubprogramas | listaDeclaraciones seccionSubprogramas;
+medio ::= listaDeclaraciones cuerpo;
 
 listaDeclaraciones ::= seccionConstantes | seccionTipos | seccionConstantes seccionTipos | seccionVariables | seccionConstantes seccionVariables | seccionTipos seccionVariables | seccionConstantes seccionTipos seccionVariables;
 
@@ -196,12 +204,36 @@ declaracionVariables ::= declaracionVariable PCOMA | declaracionVariable PCOMA d
 declaracionVariable ::= ID DOSPUNTOS tipoDato | ID COMA declaracionVariable;
 tipoDato::= ID | tipoPrimitivo;
 
-seccionSubprogramas ::= expresionCompuesta PCOMA  | expresionCompuesta PCOMA seccionSubprogramas;
 
-expresionCompuesta::= expresion operador expresion;
-expresion::= valorExpresion | expresionCompuesta | parentesis;
+// expresiones y aceso a vectores
+expresionCompuesta::= expresion operador expresion | APAREN expresion operador expresion CPAREN | ACOR expresion operador CCOR;
+expresion::= valorExpresion | expresionCompuesta | parentesis | corchetes;
 parentesis::= APAREN parentesis expresion CPAREN | APAREN expresion CPAREN;
-
+corchetes::= ACOR corchetes expresion CCOR | ACOR expresion CCOR;
 operador ::= POR | AND | MENOS | OR | MAYOR | IGUAL;
-valorExpresion ::= ID | valorLiteral;
+valorExpresion ::= ID | valorLiteral | accesoVector;
+accesoVector::= ID ACOR CDIGITO CCOR;
+
+llamadaFuncion::= ID APAREN listaValores CPAREN;
+listaValores::= valorExpresion | valorExpresion COMA listaValores;
+
+
+cuerpo::= BEGIN sentencias;
+sentencias::= sentenciaAsignacion PCOMA |sentenciasIF PCOMA  |  sentenciasIF PCOMA sentencias | sentenciaAsignacion PCOMA sentencias | sentenciasFOR PCOMA | sentenciasFOR PCOMA sentencias;
+sentenciaAsignacion::= ID DOSPUNTOS IGUAL expresionCompuesta | 
+						 ID DOSPUNTOS IGUAL llamadaFuncion |
+						 ID DOSPUNTOS IGUAL valorLiteral	|
+						 ID DOSPUNTOS IGUAL ID 				|
+						 accesoVector DOSPUNTOS IGUAL expresionCompuesta|
+						 accesoVector DOSPUNTOS IGUAL llamadaFuncion |
+						 accesoVector DOSPUNTOS IGUAL valorLiteral |
+						 accesoVector DOSPUNTOS IGUAL ID;
+
+sentenciasIF::= IF expresionCompuesta THEN sentencias ELSE sentencias END 
+				| IF expresionCompuesta THEN sentencias END ;
+
+//Vamos a considerar que la expresion de comienzo de un for es cualquier sentecia de asignación de las antes expuestas
+
+sentenciasFOR::= FOR sentenciaAsignacion TO ID DO sentencias END | FOR sentenciaAsignacion TO CDIGITO DO sentencias END;
+
 
