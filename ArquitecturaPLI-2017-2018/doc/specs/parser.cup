@@ -138,6 +138,12 @@ non terminal			sentenciaAsignacion;
 non terminal			sentenciasIF;
 non terminal			sentenciasFOR;
 non terminal			cuerpo;
+non terminal			sentenciasWrite;
+non terminal			writeString;
+non terminal			writeInt;
+non terminal			llamadaProcedimiento;
+non terminal			procedimiento;
+non terminal			funcion;
 // ...
 
 
@@ -177,7 +183,12 @@ axiom ::= principio medio ;
 
 principio ::= MODULE ID PCOMA ;
 
-medio ::= listaDeclaraciones cuerpo;
+medio ::=  listaDeclaraciones seccionSubprogramas cuerpo | listaDeclaraciones cuerpo | seccionSubprogramas cuerpo | cuerpo;
+
+seccionSubprogramas::=  funcion | procedimiento | funcion seccionSubprogramas | procedimiento seccionSubprogramas;
+
+procedimiento::= PROCEDURE ID PCOMA medio | PROCEDURE ID APAREN CPAREN PCOMA medio | PROCEDURE ID APAREN declaracionVariables CPAREN PCOMA medio; 
+	
 
 listaDeclaraciones ::= seccionConstantes | seccionTipos | seccionConstantes seccionTipos | seccionVariables | seccionConstantes seccionVariables | seccionTipos seccionVariables | seccionConstantes seccionTipos seccionVariables;
 
@@ -212,14 +223,19 @@ parentesis::= APAREN parentesis expresion CPAREN | APAREN expresion CPAREN;
 corchetes::= ACOR corchetes expresion CCOR | ACOR expresion CCOR;
 operador ::= POR | AND | MENOS | OR | MAYOR | IGUAL;
 valorExpresion ::= ID | valorLiteral | accesoVector;
-accesoVector::= ID ACOR CDIGITO CCOR;
+accesoVector::= ID ACOR CDIGITO CCOR | ID ACOR ID CCOR;
 
-llamadaFuncion::= ID APAREN listaValores CPAREN;
-listaValores::= valorExpresion | valorExpresion COMA listaValores;
+llamadaFuncion::= ID APAREN listaValores CPAREN | ID APAREN llamadaFuncion COMA listaValores CPAREN;
+listaValores::= valorExpresion | valorExpresion COMA listaValores | llamadaFuncion ;
+
+llamadaProcedimiento::= ID PCOMA | ID APAREN CPAREN PCOMA | ID APAREN listaValores CPAREN PCOMA;
 
 
 cuerpo::= BEGIN sentencias;
-sentencias::= sentenciaAsignacion PCOMA |sentenciasIF PCOMA  |  sentenciasIF PCOMA sentencias | sentenciaAsignacion PCOMA sentencias | sentenciasFOR PCOMA | sentenciasFOR PCOMA sentencias;
+sentencias::= sentenciaAsignacion PCOMA |sentenciasIF PCOMA  |  sentenciasIF PCOMA sentencias | sentenciaAsignacion PCOMA sentencias | sentenciasFOR PCOMA | sentenciasFOR PCOMA sentencias 
+				| sentenciasWrite PCOMA | sentenciasWrite PCOMA sentencias | llamadaProcedimiento | llamadaProcedimiento sentencias;
+
+
 sentenciaAsignacion::= ID DOSPUNTOS IGUAL expresionCompuesta | 
 						 ID DOSPUNTOS IGUAL llamadaFuncion |
 						 ID DOSPUNTOS IGUAL valorLiteral	|
@@ -235,5 +251,10 @@ sentenciasIF::= IF expresionCompuesta THEN sentencias ELSE sentencias END
 //Vamos a considerar que la expresion de comienzo de un for es cualquier sentecia de asignación de las antes expuestas
 
 sentenciasFOR::= FOR sentenciaAsignacion TO ID DO sentencias END | FOR sentenciaAsignacion TO CDIGITO DO sentencias END;
+
+sentenciasWrite::= writeString | writeInt | WRITELN;
+
+writeString::= WRITESTRING APAREN CCADENA CPAREN;
+writeInt::= WRITEINT APAREN ID CPAREN | WRITEINT APAREN CDIGITO CPAREN;
 
 

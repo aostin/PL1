@@ -16,13 +16,22 @@ VAR x, y : INTEGER;
 	c1, c2 : TipoVectorBooleanos;
 	a245: INTEGER;
 
+PROCEDURE ALGO(v: Tipovector; a,s : INTEGER;);
+PROCEDURE ALGO();
+BEGIN
+a:=3;
+BEGIN
+a:=4;
+
+
 BEGIN	
 a:=2*(4-2);
 v[3]:=3*4-2;
 suma:=3-2-1;
 pureba:= prueba(2,2);
 nose:=(a>b) AND ((b>c) AND (c>d));
-
+d:= resta(v[i], suma(3));
+d:= resta(suma(2), v[2]);
 IF b>a THEN
 		resta:=a1-b1;
 		ELSE
@@ -42,4 +51,12 @@ FOR a1:=1 TO SDF DO
 		END;
 		manolo:=2;
 END;    
+
+WRITESTRING("NOSE");
+WRITEINT(A);
+WRITEINT(2);
+WRITELN;
+a;
+a(3);
+a();
 

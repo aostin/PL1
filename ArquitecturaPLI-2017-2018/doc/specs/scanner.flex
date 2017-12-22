@@ -221,6 +221,14 @@ DIGITO=[0-9]
                            token.setLexema (yytext ());
            			       return token;
                         }
+    PROCEDURE	{
+			   Token token = new Token(sym.PROCEDURE);
+                           token.setLine (yyline + 1);
+                           token.setColumn (yycolumn + 1);
+                           token.setLexema (yytext ());
+           			       return token;
+			}
+			
                         
     OR                {  
                            Token token = new Token (sym.OR);
@@ -409,14 +417,7 @@ DIGITO=[0-9]
 
     
     // incluir aqui el resto de las reglas patron - accion
-    "procedure" 	{
-			   Token token = new Token(1);
-                           token.setLine (yyline + 1);
-                           token.setColumn (yycolumn + 1);
-                           token.setLexema (yytext ());
-           			       return token;
-			}
-			
+  
 			
 
    {ESPACIO_BLANCO}	{}
