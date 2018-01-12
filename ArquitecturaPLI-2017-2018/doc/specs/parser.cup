@@ -106,7 +106,6 @@ non terminal  			program;
 non terminal Axiom		axiom;
 non terminal 			principio;
 non terminal			medio;
-non terminal			final;
 non terminal 			seccionConstantes;
 non terminal			seccionTipos;
 non terminal			seccionVariables;
@@ -118,16 +117,13 @@ non terminal			declaracionTipos;
 non terminal			declaracionTipo;
 non terminal			declaracionVariable;
 non terminal			declaracionVariables;
-non terminal			valorLiteral;
+non terminal			valorConstante;
 non terminal			tipoPrimitivo;
 non terminal			tipoDato;
-non terminal			listaId;
-non terminal			expresiones;
 non terminal			expresion;
 non terminal 			operador;
 non terminal 			valorExpresion;
 non terminal			expresionCompuesta;
-non terminal			pDerecha;
 non terminal			parentesis;
 non terminal			corchetes;
 non terminal			accesoVector;
@@ -144,6 +140,15 @@ non terminal			writeInt;
 non terminal			llamadaProcedimiento;
 non terminal			procedimiento;
 non terminal			funcion;
+non terminal			subprograma;
+non terminal			cuerpoSubprograma;
+non terminal			sentenciasSubprograma;
+non terminal			sentenciasIFSubprograma;
+non terminal			sentenciasFORSubprograma;
+non terminal			valorSentencia;
+non terminal			valorSimple;
+non terminal			tipoSentencia;
+non terminal 			tipoSentenciaSubprograma;
 // ...
 
 
@@ -185,10 +190,25 @@ principio ::= MODULE ID PCOMA ;
 
 medio ::=  listaDeclaraciones seccionSubprogramas cuerpo | listaDeclaraciones cuerpo | seccionSubprogramas cuerpo | cuerpo;
 
+//Esta parte la hacemos distinta del cuerpo del programa principal con el fin de que se pueda incluir un RETURN dentro de un IF o un FOR en el subprograma
+
+subprograma::= listaDeclaraciones seccionSubprogramas cuerpoSubprograma |  listaDeclaraciones cuerpoSubprograma | seccionSubprogramas cuerpoSubprograma | cuerpoSubprograma;
+
 seccionSubprogramas::=  funcion | procedimiento | funcion seccionSubprogramas | procedimiento seccionSubprogramas;
 
-procedimiento::= PROCEDURE ID PCOMA medio | PROCEDURE ID APAREN CPAREN PCOMA medio | PROCEDURE ID APAREN declaracionVariables CPAREN PCOMA medio; 
-	
+procedimiento::= PROCEDURE ID PCOMA subprograma | PROCEDURE ID APAREN CPAREN PCOMA subprograma | PROCEDURE ID APAREN declaracionVariables CPAREN PCOMA subprograma; 
+funcion::=  PROCEDURE ID DOSPUNTOS tipoPrimitivo PCOMA subprograma | PROCEDURE ID APAREN CPAREN DOSPUNTOS tipoPrimitivo PCOMA subprograma | PROCEDURE ID APAREN declaracionVariables CPAREN DOSPUNTOS tipoPrimitivo PCOMA subprograma; 
+cuerpoSubprograma::=BEGIN sentenciasSubprograma END PCOMA;
+
+sentenciasSubprograma::= tipoSentenciaSubprograma PCOMA | tipoSentenciaSubprograma PCOMA sentenciasSubprograma ;
+tipoSentenciaSubprograma::=sentenciaAsignacion | sentenciasIFSubprograma | sentenciasFORSubprograma | sentenciasWrite | llamadaProcedimiento | RETURN valorSimple;
+
+
+sentenciasIFSubprograma::= IF expresionCompuesta THEN sentenciasSubprograma ELSE sentenciasSubprograma END 
+				| IF expresionCompuesta THEN sentenciasSubprograma END ;
+				
+sentenciasFORSubprograma::= FOR sentenciaAsignacion TO ID DO sentenciasSubprograma END | FOR sentenciaAsignacion TO CDIGITO DO sentenciasSubprograma END;
+
 
 listaDeclaraciones ::= seccionConstantes | seccionTipos | seccionConstantes seccionTipos | seccionVariables | seccionConstantes seccionVariables | seccionTipos seccionVariables | seccionConstantes seccionTipos seccionVariables;
 
@@ -196,9 +216,10 @@ seccionConstantes ::= CONST declaracionConstantes;
 
 declaracionConstantes ::= declaracionConstante declaracionConstantes| declaracionConstante ;
 
-declaracionConstante ::= ID IGUAL valorLiteral PCOMA;
+declaracionConstante ::= ID IGUAL valorConstante PCOMA;
 
-valorLiteral ::= TRUE | FALSE | CDIGITO;
+valorConstante ::= TRUE | FALSE | CDIGITO;
+valorSimple::= valorConstante  | ID;
 
 seccionTipos ::= TYPE declaracionTipos;
 
@@ -216,37 +237,38 @@ declaracionVariable ::= ID DOSPUNTOS tipoDato | ID COMA declaracionVariable;
 tipoDato::= ID | tipoPrimitivo;
 
 
-// expresiones y aceso a vectores
+// expresiones y aceso a vectores. Se contempla la posibilidad de corchetes y parentesis anidados
+
 expresionCompuesta::= expresion operador expresion | APAREN expresion operador expresion CPAREN | ACOR expresion operador CCOR;
 expresion::= valorExpresion | expresionCompuesta | parentesis | corchetes;
 parentesis::= APAREN parentesis expresion CPAREN | APAREN expresion CPAREN;
 corchetes::= ACOR corchetes expresion CCOR | ACOR expresion CCOR;
 operador ::= POR | AND | MENOS | OR | MAYOR | IGUAL;
-valorExpresion ::= ID | valorLiteral | accesoVector;
+valorExpresion ::= valorSimple | accesoVector;
 accesoVector::= ID ACOR CDIGITO CCOR | ID ACOR ID CCOR;
 
-llamadaFuncion::= ID APAREN listaValores CPAREN | ID APAREN llamadaFuncion COMA listaValores CPAREN;
+//Llamadas a funciones y procedimientos
+
 listaValores::= valorExpresion | valorExpresion COMA listaValores | llamadaFuncion ;
 
-llamadaProcedimiento::= ID PCOMA | ID APAREN CPAREN PCOMA | ID APAREN listaValores CPAREN PCOMA;
+llamadaFuncion::= ID APAREN listaValores CPAREN | ID APAREN llamadaFuncion COMA listaValores CPAREN;
 
+llamadaProcedimiento::= ID| ID APAREN CPAREN| ID APAREN listaValores CPAREN ;
 
-cuerpo::= BEGIN sentencias;
-sentencias::= sentenciaAsignacion PCOMA |sentenciasIF PCOMA  |  sentenciasIF PCOMA sentencias | sentenciaAsignacion PCOMA sentencias | sentenciasFOR PCOMA | sentenciasFOR PCOMA sentencias 
-				| sentenciasWrite PCOMA | sentenciasWrite PCOMA sentencias | llamadaProcedimiento | llamadaProcedimiento sentencias;
+//Cuerpo del programa
+cuerpo::= BEGIN sentencias END PCOMA;
 
+//Sentencias tipo 
 
-sentenciaAsignacion::= ID DOSPUNTOS IGUAL expresionCompuesta | 
-						 ID DOSPUNTOS IGUAL llamadaFuncion |
-						 ID DOSPUNTOS IGUAL valorLiteral	|
-						 ID DOSPUNTOS IGUAL ID 				|
-						 accesoVector DOSPUNTOS IGUAL expresionCompuesta|
-						 accesoVector DOSPUNTOS IGUAL llamadaFuncion |
-						 accesoVector DOSPUNTOS IGUAL valorLiteral |
-						 accesoVector DOSPUNTOS IGUAL ID;
+sentencias::= tipoSentencia PCOMA | tipoSentencia PCOMA sentencias;
 
-sentenciasIF::= IF expresionCompuesta THEN sentencias ELSE sentencias END 
-				| IF expresionCompuesta THEN sentencias END ;
+tipoSentencia::= sentenciaAsignacion | sentenciasIF | sentenciasFOR | sentenciasWrite | llamadaProcedimiento;
+
+sentenciaAsignacion::= ID DOSPUNTOS IGUAL valorSentencia | accesoVector DOSPUNTOS IGUAL valorSentencia;
+
+valorSentencia::= expresionCompuesta | llamadaFuncion | valorSimple ;
+
+sentenciasIF::= IF expresionCompuesta THEN sentencias ELSE sentencias END | IF expresionCompuesta THEN sentencias END ;
 
 //Vamos a considerar que la expresion de comienzo de un for es cualquier sentecia de asignación de las antes expuestas
 
@@ -256,5 +278,45 @@ sentenciasWrite::= writeString | writeInt | WRITELN;
 
 writeString::= WRITESTRING APAREN CCADENA CPAREN;
 writeInt::= WRITEINT APAREN ID CPAREN | WRITEINT APAREN CDIGITO CPAREN;
+
+
+//Tratamiento de errores
+
+//Errores al comienzo del programa
+
+principio::= error {: 
+        syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada MODULE"); 
+   :} ID PCOMA
+   		| MODULE ID error  {:syntaxErrorManager.syntaxInfo ("Se esperaba el delimitador ';'"); 
+   :} ;
+
+  
+sentencias::= tipoSentencia error {:syntaxErrorManager.syntaxInfo ("Error, se espera el simbolo ';'"); 
+   :}  |
+   	tipoSentencia error {:syntaxErrorManager.syntaxInfo ("Error, se espera el simbolo ';'"); 
+   :} sentencias ;
+
+
+/*sentenciaAsignacion::= error  {:syntaxErrorManager.syntaxInfo ("Error en el identificador de la sentencia"); 
+   :} DOSPUNTOS IGUAL valorSentencia;
+*/
+
+/*   		
+//Errores en sentencias de asignacion  		
+
+
+//Errores en procedimientos
+procedimiento::= error {:syntaxErrorManager.syntaxInfo ("Error en la definicion del procedimiento"); 
+   :} ;
+   
+//Errores en sentenciasIF
+
+sentenciasIF::= error {:syntaxErrorManager.syntaxInfo ("Error en la construccion de la sentencia IF"); 
+   :} expresionCompuesta THEN
+   | IF sentencias THEN error {:syntaxErrorManager.syntaxInfo ("Error en la construccion de la sentencia IF"); 
+   :}   ;
+
+//Error en sentencias FOR
+*/
 
 

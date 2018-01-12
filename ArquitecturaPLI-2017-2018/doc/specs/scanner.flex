@@ -24,8 +24,13 @@ import es.uned.lsi.compiler.lexical.LexicalErrorManager;
 %state COMMENT
 
 %eof{
+//Error por comentarios mal balanceados
 	if (commentCount!=0) {
-    			lexicalErrorManager.lexicalError("Comentarios no balanceados. Compruebe la l�nea " + commentLinea );
+				LexicalError error = new LexicalError ();
+                error.setLine (yyline + 1);
+                error.setColumn (yycolumn + 1);
+                error.setLexema (yytext ());
+    			lexicalErrorManager.lexicalError("Comentarios no balanceados. Compruebe la linea " + commentLinea );
     		}
 
 %eof}
@@ -326,7 +331,8 @@ DIGITO=[0-9]
                            token.setLexema (yytext ());
            			       return token;
                         }
-                        
+ //Identificadores
+                      
  {ALFA} ({ALFA} | {DIGITO})*
                  {  
                            Token token = new Token (sym.ID);
@@ -335,6 +341,8 @@ DIGITO=[0-9]
                            token.setLexema (yytext ());
            			       return token;
                         }
+  
+  //Dígitos
                         
  {DIGITO}+         {  
                            Token token = new Token (sym.CDIGITO);
@@ -343,6 +351,8 @@ DIGITO=[0-9]
                            token.setLexema (yytext ());
            			       return token;
                         }
+ 
+ //Cadenas
                         
 "\x22" ({ALFA} | {DIGITO})* "\x22"
 {  
@@ -424,6 +434,27 @@ DIGITO=[0-9]
 
 {fin} {}
     
+    //errores en cadenas
+    
+    ({ALFA} | {DIGITO})* "\x22" 
+     {                                               
+                           LexicalError error = new LexicalError ();
+                           error.setLine (yyline + 1);
+                           error.setColumn (yycolumn + 1);
+                           error.setLexema (yytext ());
+                           lexicalErrorManager.lexicalError ("La cadena debe empezar por comillas dobles en la linea " + yyline);
+                        }
+       
+        "\x22"  ({ALFA} | {DIGITO})* 
+     {                                               
+                           LexicalError error = new LexicalError ();
+                           error.setLine (yyline + 1);
+                           error.setColumn (yycolumn + 1);
+                           error.setLexema (yytext ());
+                           lexicalErrorManager.lexicalError ("La cadena debe finalizar por comillas dobles en la linea " + yyline);
+                        }                 
+     
+    
     // error en caso de coincidir con ning�n patr�n
 	[^]     
                         {                                               
@@ -435,6 +466,8 @@ DIGITO=[0-9]
                         }
     
 }
+
+//Control de balanceo de comentarios
 
 <COMMENT>  {
 
