@@ -8,7 +8,7 @@
 		se quiera compilar
 	-->
 	
-	<property name="test-file-name" value="test1.muned"/>
+	<property name="test-file-name" value="testCaseGus-GrupoB.muned"/>
 	
 	<property name="lib" location="lib"/>
 	<property name="test" location="doc/test"/>

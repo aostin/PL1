@@ -354,7 +354,7 @@ DIGITO=[0-9]
  
  //Cadenas
                         
-"\x22" ({ALFA} | {DIGITO})* "\x22"
+"\x22" ([^])* "\x22"
 {  
                            Token token = new Token (sym.CCADENA);
                            token.setLine (yyline + 1);
@@ -435,26 +435,34 @@ DIGITO=[0-9]
 {fin} {}
     
     //errores en cadenas
-    
-    ({ALFA} | {DIGITO})* "\x22" 
+ /*   
+    ([^])* "\x22" 
      {                                               
                            LexicalError error = new LexicalError ();
                            error.setLine (yyline + 1);
                            error.setColumn (yycolumn + 1);
                            error.setLexema (yytext ());
-                           lexicalErrorManager.lexicalError ("La cadena debe empezar por comillas dobles en la linea " + yyline);
+                           lexicalErrorManager.lexicalError ("La cadena debe empezar por comillas dobles en la linea " + yyline +1);
                         }
        
-        "\x22"  ({ALFA} | {DIGITO})* 
+        "\x22"  ([^])*
      {                                               
                            LexicalError error = new LexicalError ();
                            error.setLine (yyline + 1);
                            error.setColumn (yycolumn + 1);
                            error.setLexema (yytext ());
-                           lexicalErrorManager.lexicalError ("La cadena debe finalizar por comillas dobles en la linea " + yyline);
-                        }                 
+                           lexicalErrorManager.lexicalError ("La cadena debe finalizar por comillas dobles en la linea " + yyline +1);
+                        }  
+                        
+                   
      
-    
+   */ 
+   
+   
+   
+   
+   
+   
     // error en caso de coincidir con ning�n patr�n
 	[^]     
                         {                                               
@@ -483,6 +491,8 @@ DIGITO=[0-9]
     		  	yybegin (YYINITIAL);
     		  else
     		  	commentLinea=yyline;
+    		  	
+    		  	
     }
     		
     	[^] {}

@@ -105,7 +105,7 @@ terminal Token PUNTO;
 non terminal  			program;
 non terminal Axiom		axiom;
 non terminal 			principio;
-non terminal			medio;
+non terminal			final;
 non terminal 			seccionConstantes;
 non terminal			seccionTipos;
 non terminal			seccionVariables;
@@ -184,21 +184,21 @@ program ::=
   		syntaxErrorManager.syntaxInfo ("Parsing process ended.");
    :};
 
-axiom ::= principio medio ;
+axiom ::= principio final ;
 
 principio ::= MODULE ID PCOMA ;
 
-medio ::=  listaDeclaraciones seccionSubprogramas cuerpo | listaDeclaraciones cuerpo | seccionSubprogramas cuerpo | cuerpo;
+final ::=  listaDeclaraciones seccionSubprogramas cuerpo | listaDeclaraciones cuerpo | seccionSubprogramas cuerpo | cuerpo;
 
 //Esta parte la hacemos distinta del cuerpo del programa principal con el fin de que se pueda incluir un RETURN dentro de un IF o un FOR en el subprograma
 
 subprograma::= listaDeclaraciones seccionSubprogramas cuerpoSubprograma |  listaDeclaraciones cuerpoSubprograma | seccionSubprogramas cuerpoSubprograma | cuerpoSubprograma;
 
-seccionSubprogramas::=  funcion | procedimiento | funcion seccionSubprogramas | procedimiento seccionSubprogramas;
+seccionSubprogramas::=  PROCEDURE funcion |PROCEDURE  procedimiento |PROCEDURE  funcion seccionSubprogramas |PROCEDURE  procedimiento seccionSubprogramas;
 
-procedimiento::= PROCEDURE ID PCOMA subprograma | PROCEDURE ID APAREN CPAREN PCOMA subprograma | PROCEDURE ID APAREN declaracionVariables CPAREN PCOMA subprograma; 
-funcion::=  PROCEDURE ID DOSPUNTOS tipoPrimitivo PCOMA subprograma | PROCEDURE ID APAREN CPAREN DOSPUNTOS tipoPrimitivo PCOMA subprograma | PROCEDURE ID APAREN declaracionVariables CPAREN DOSPUNTOS tipoPrimitivo PCOMA subprograma; 
-cuerpoSubprograma::=BEGIN sentenciasSubprograma END PCOMA;
+procedimiento::=  ID PCOMA subprograma |  ID APAREN CPAREN PCOMA subprograma |  ID APAREN declaracionVariables PCOMA subprograma; 
+funcion::=   ID DOSPUNTOS tipoPrimitivo PCOMA subprograma |  ID APAREN CPAREN DOSPUNTOS tipoPrimitivo PCOMA subprograma |  ID APAREN declaracionVariables DOSPUNTOS tipoPrimitivo PCOMA subprograma; 
+cuerpoSubprograma::=BEGIN sentenciasSubprograma END ID PCOMA | BEGIN END ID PCOMA;
 
 sentenciasSubprograma::= tipoSentenciaSubprograma PCOMA | tipoSentenciaSubprograma PCOMA sentenciasSubprograma ;
 tipoSentenciaSubprograma::=sentenciaAsignacion | sentenciasIFSubprograma | sentenciasFORSubprograma | sentenciasWrite | llamadaProcedimiento | RETURN valorSimple;
@@ -225,15 +225,18 @@ seccionTipos ::= TYPE declaracionTipos;
 
 declaracionTipos ::= declaracionTipo | declaracionTipo declaracionTipos;
 
-declaracionTipo ::= ID IGUAL ARRAY ACOR CDIGITO PUNTOS CDIGITO CCOR OF tipoPrimitivo PCOMA;
+declaracionTipo ::= ID IGUAL ARRAY ACOR CDIGITO PUNTOS CDIGITO CCOR OF tipoPrimitivo PCOMA | 
+					ID IGUAL ARRAY ACOR ID PUNTOS CDIGITO CCOR OF tipoPrimitivo PCOMA |
+					ID IGUAL ARRAY ACOR ID PUNTOS ID CCOR OF tipoPrimitivo PCOMA |
+					ID IGUAL ARRAY ACOR CDIGITO PUNTOS ID CCOR OF tipoPrimitivo PCOMA;
 
 tipoPrimitivo ::= INTEGER | BOOLEAN;
 
 
 seccionVariables ::= VAR declaracionVariables;
 
-declaracionVariables ::= declaracionVariable PCOMA | declaracionVariable PCOMA declaracionVariables;
-declaracionVariable ::= ID DOSPUNTOS tipoDato | ID COMA declaracionVariable;
+declaracionVariables ::= declaracionVariable | declaracionVariable declaracionVariables;
+declaracionVariable ::= ID DOSPUNTOS tipoDato CPAREN | ID DOSPUNTOS tipoDato PCOMA | ID COMA declaracionVariable ;
 tipoDato::= ID | tipoPrimitivo;
 
 
@@ -245,7 +248,7 @@ parentesis::= APAREN parentesis expresion CPAREN | APAREN expresion CPAREN;
 corchetes::= ACOR corchetes expresion CCOR | ACOR expresion CCOR;
 operador ::= POR | AND | MENOS | OR | MAYOR | IGUAL;
 valorExpresion ::= valorSimple | accesoVector;
-accesoVector::= ID ACOR CDIGITO CCOR | ID ACOR ID CCOR;
+accesoVector::= ID ACOR CDIGITO CCOR | ID ACOR ID CCOR | ID ACOR accesoVector CCOR;
 
 //Llamadas a funciones y procedimientos
 
@@ -256,7 +259,7 @@ llamadaFuncion::= ID APAREN listaValores CPAREN | ID APAREN llamadaFuncion COMA 
 llamadaProcedimiento::= ID| ID APAREN CPAREN| ID APAREN listaValores CPAREN ;
 
 //Cuerpo del programa
-cuerpo::= BEGIN sentencias END PCOMA;
+cuerpo::= BEGIN sentencias END ID PCOMA | BEGIN END ID PCOMA;
 
 //Sentencias tipo 
 
@@ -277,46 +280,271 @@ sentenciasFOR::= FOR sentenciaAsignacion TO ID DO sentencias END | FOR sentencia
 sentenciasWrite::= writeString | writeInt | WRITELN;
 
 writeString::= WRITESTRING APAREN CCADENA CPAREN;
-writeInt::= WRITEINT APAREN ID CPAREN | WRITEINT APAREN CDIGITO CPAREN;
+writeInt::= WRITEINT APAREN ID CPAREN | WRITEINT APAREN CDIGITO CPAREN | WRITEINT APAREN expresionCompuesta CPAREN | WRITEINT APAREN llamadaFuncion CPAREN | WRITEINT APAREN accesoVector CPAREN;
 
 
 //Tratamiento de errores
 
 //Errores al comienzo del programa
 
-principio::= error {: 
+principio::= ID error {: 
         syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada MODULE"); 
-   :} ID PCOMA
-   		| MODULE ID error  {:syntaxErrorManager.syntaxInfo ("Se esperaba el delimitador ';'"); 
+   :}  PCOMA
+   | MODULE error  {:syntaxErrorManager.syntaxInfo ("Se esperaba un identificador"); 
+   :} PCOMA 
+   		| MODULE ID error  {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ';'"); 
    :} ;
+
+
+//Errores en la seccion de constantes
+
+seccionConstantes::= declaracionConstantes error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'CONST'"); 
+   :};
+   
+declaracionConstante::= IGUAL error {:syntaxErrorManager.syntaxInfo ("Se esperaba un identificador"); 
+   :} valorConstante PCOMA | 
+    ID  error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo '='"); 
+   :}valorConstante PCOMA
+    | 
+    ID IGUAL error {:syntaxErrorManager.syntaxInfo ("Se esperaba un valor valido para la constante"); 
+   :} PCOMA
+    | 
+    ID IGUAL error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ';'"); 
+   :} valorConstante  declaracionConstante
+   | 
+   //Si lee una declaracion de tipo sin la palabra reservada TYPE notifica del error
+   
+    ID IGUAL ARRAY error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'TYPE'"); 
+   :} declaracionConstante
+  
+     ;
+
+
+//Errores en la seccion de declaracion de tipos
+
+
+declaracionTipo::= IGUAL error {:syntaxErrorManager.syntaxInfo ("Se esperaba un identificador"); 
+   :} ARRAY ACOR CDIGITO PUNTOS CDIGITO CCOR OF tipoPrimitivo PCOMA
+   | ID error {:syntaxErrorManager.syntaxInfo ("Se el simbolo '='"); 
+   :}  ARRAY ACOR CDIGITO PUNTOS CDIGITO CCOR OF tipoPrimitivo PCOMA
+   | ID IGUAL error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'ARRAY'"); 
+   :} ACOR CDIGITO PUNTOS CDIGITO CCOR OF tipoPrimitivo PCOMA
+   | ID IGUAL ARRAY error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo '['"); 
+   :}  CDIGITO PUNTOS CDIGITO CCOR OF tipoPrimitivo PCOMA
+   | ID IGUAL ARRAY ACOR  error {:syntaxErrorManager.syntaxInfo ("Se esperaba un valor numerico"); 
+   :} PUNTOS CDIGITO CCOR OF tipoPrimitivo PCOMA
+   | ID IGUAL ARRAY ACOR CDIGITO error {:syntaxErrorManager.syntaxInfo ("Se esperaban los simbolos '..'"); 
+   :} CCOR OF tipoPrimitivo PCOMA
+    | ID IGUAL ARRAY ACOR CDIGITO PUNTOS  error {:syntaxErrorManager.syntaxInfo ("Se esperaba un valor numerico"); 
+   :} CCOR OF tipoPrimitivo PCOMA
+    | ID IGUAL ARRAY ACOR CDIGITO PUNTOS CDIGITO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ']'"); 
+   :} OF tipoPrimitivo PCOMA
+    | ID IGUAL ARRAY ACOR CDIGITO PUNTOS CDIGITO CCOR  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada  'OF'"); 
+   :} tipoPrimitivo PCOMA
+    | ID IGUAL ARRAY ACOR CDIGITO PUNTOS CDIGITO CCOR OF error {:syntaxErrorManager.syntaxInfo ("Se esperaba un tipo primitivo"); 
+   :} PCOMA 
+    | ID IGUAL ARRAY ACOR CDIGITO PUNTOS CDIGITO CCOR OF tipoPrimitivo error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ';'"); 
+   :} 
+   |
+    //Si lee una declaracion de variable sin la palabra reservada VAR notifica del error
+   
+    ID DOSPUNTOS error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'VAR'"); 
+   :} 
+    | 
+   //Si lee una declaracion de variable sin la palabra reservada VAR notifica del error
+   
+    ID COMA error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'VAR'"); 
+   :};
+
+
+
+//Errores en la declaracion de variables
+
+
+declaracionVariable ::=   error {:syntaxErrorManager.syntaxInfo ("Se esperaba un identificador valido"); 
+   :} tipoDato  
+   | ID error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ':'"); 
+   :} tipoDato 
+   | ID DOSPUNTOS error {:syntaxErrorManager.syntaxInfo ("Se esperaba un identificador o un tipo primitivo"); 
+   :} 
+  | ID COMA error {:syntaxErrorManager.syntaxInfo ("Se esperaba un identificador valido"); 
+   :} DOSPUNTOS tipoPrimitivo PCOMA
+   |ID DOSPUNTOS tipoDato error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ';'"); 
+   :} 
+    
+     ;
+
+
 
   
-sentencias::= tipoSentencia error {:syntaxErrorManager.syntaxInfo ("Error, se espera el simbolo ';'"); 
-   :}  |
-   	tipoSentencia error {:syntaxErrorManager.syntaxInfo ("Error, se espera el simbolo ';'"); 
-   :} sentencias ;
-
-
-/*sentenciaAsignacion::= error  {:syntaxErrorManager.syntaxInfo ("Error en el identificador de la sentencia"); 
-   :} DOSPUNTOS IGUAL valorSentencia;
-*/
-
-/*   		
-//Errores en sentencias de asignacion  		
-
-
-//Errores en procedimientos
-procedimiento::= error {:syntaxErrorManager.syntaxInfo ("Error en la definicion del procedimiento"); 
+sentencias::= tipoSentencia error {:syntaxErrorManager.syntaxInfo ("Error, se esperaba el simbolo ';'"); 
    :} ;
+
+
+sentenciaAsignacion::= DOSPUNTOS error  {:syntaxErrorManager.syntaxInfo ("Error en el identificador de la sentencia"); 
+   :} |
+   ID IGUAL error  {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ':'"); 
+   :} valorSentencia |
+   accesoVector IGUAL error  {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ':'"); 
+   :} valorSentencia
+   |
+   ID DOSPUNTOS   {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo '='"); 
+   :} valorSentencia PCOMA
+   |
+   accesoVector DOSPUNTOS error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo '='"); 
+   :} valorSentencia PCOMA
+   |
+   ID DOSPUNTOS IGUAL   {:syntaxErrorManager.syntaxInfo ("Se esperaba un valor para la sentencia"); 
+   :} PCOMA
+    |
+   accesoVector DOSPUNTOS IGUAL {:syntaxErrorManager.syntaxInfo ("Se esperaba un valor para la sentencia"); 
+   :}  PCOMA 
+    ;
+
+//Errores en sentencias IF
+sentenciasIF::= expresionCompuesta error {:syntaxErrorManager.syntaxInfo ("Error se esperaba la palabra reservada 'IF'"); 
+   :}  sentencias END
+    | IF expresionCompuesta sentencias error {:syntaxErrorManager.syntaxInfo ("Error, se esperaba la palabra reservada 'THEN'"); 
+   :}  END  
+   | IF expresionCompuesta THEN sentencias PCOMA error {:syntaxErrorManager.syntaxInfo ("Error se esperaba la palabra reservada 'END'"); 
+   :}  
+   | IF expresionCompuesta THEN sentencias ELSE sentencias PCOMA error {:syntaxErrorManager.syntaxInfo ("Error se esperaba la palabra reservada 'END'"); 
+   :}  
+    | IF THEN error {:syntaxErrorManager.syntaxInfo ("Se esperaba una expresion"); 
+    :}
+   | IF expresionCompuesta THEN  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :} END 
+    | IF expresionCompuesta THEN  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :} ELSE
+   | IF expresionCompuesta THEN sentencias ELSE  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :} END 
+     ;
+     
+ //Errores en sentencias IF de subprogramas. Análogo al anterior
+ 
+sentenciasIFSubprograma::= expresionCompuesta error {:syntaxErrorManager.syntaxInfo ("Error se esperaba la palabra reservada 'IF'"); 
+   :}  sentenciasSubprograma END
+    | IF expresionCompuesta sentenciasSubprograma error {:syntaxErrorManager.syntaxInfo ("Error, se esperaba la palabra reservada 'THEN'"); 
+   :}   END  
+   | IF expresionCompuesta THEN sentenciasSubprograma PCOMA error {:syntaxErrorManager.syntaxInfo ("Error se esperaba la palabra reservada 'END'"); 
+   :}  
+   | IF expresionCompuesta THEN sentenciasSubprograma ELSE sentenciasSubprograma PCOMA  error {:syntaxErrorManager.syntaxInfo ("Error se esperaba la palabra reservada 'END'"); 
+   :}  
+    | IF THEN error {:syntaxErrorManager.syntaxInfo ("Se esperaba una expresion"); 
+    :}
+   | IF expresionCompuesta THEN  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :} END 
+    | IF expresionCompuesta THEN  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :} ELSE
+   | IF expresionCompuesta THEN sentenciasSubprograma ELSE  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :} END 
+     
+;
+//Errores en sentencias for
+
+sentenciasFOR::= sentenciaAsignacion TO error {:syntaxErrorManager.syntaxInfo ("Error se esperaba la palabra reservada 'FOR'"); 
+   :}  |
+   FOR  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia de asignacion"); 
+   :} TO ID DO sentencias END
+   |
+   FOR sentenciaAsignacion error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada TO"); 
+   :} ID DO sentencias END
+    |
+   FOR sentenciaAsignacion  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'TO'"); 
+   :} CDIGITO DO sentencias END
+    |
+   FOR sentenciaAsignacion TO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba un identificador o un valor numerico"); 
+   :}DO sentencias END
    
-//Errores en sentenciasIF
+    |
+   FOR sentenciaAsignacion TO ID  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'DO'"); 
+   :} sentencias END
+   |
+   FOR sentenciaAsignacion TO CDIGITO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'DO'"); 
+   :} sentencias END
+   |
+   FOR sentenciaAsignacion TO ID DO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :}END
+   |
+   FOR sentenciaAsignacion TO CDIGITO DO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :}END
+   |
+   FOR sentenciaAsignacion TO ID DO sentencias  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'END'"); 
+   :}
+    |
+   FOR sentenciaAsignacion TO CDIGITO DO sentencias  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'END'"); 
+   :}
+   
+;
 
-sentenciasIF::= error {:syntaxErrorManager.syntaxInfo ("Error en la construccion de la sentencia IF"); 
-   :} expresionCompuesta THEN
-   | IF sentencias THEN error {:syntaxErrorManager.syntaxInfo ("Error en la construccion de la sentencia IF"); 
-   :}   ;
 
-//Error en sentencias FOR
+//Errores en sentencias FOR de un subprograma. Analogo al anterior
+
+sentenciasFORSubprograma::= sentenciaAsignacion TO error {:syntaxErrorManager.syntaxInfo ("Error se esperaba la palabra reservada 'FOR'"); 
+   :}  |
+   FOR  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia de asignacion"); 
+   :} TO ID DO sentenciasSubprograma END
+   |
+   FOR sentenciaAsignacion error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada TO"); 
+   :} ID DO sentencias END
+    |
+   FOR sentenciaAsignacion  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'TO'"); 
+   :} CDIGITO DO sentenciasSubprograma END
+    |
+   FOR sentenciaAsignacion TO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba un identificador o un valor numerico"); 
+   :}DO sentenciasSubprograma END
+   
+    |
+   FOR sentenciaAsignacion TO ID  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'DO'"); 
+   :} sentenciasSubprograma END
+   |
+   FOR sentenciaAsignacion TO CDIGITO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'DO'"); 
+   :} sentenciasSubprograma END
+   |
+   FOR sentenciaAsignacion TO ID DO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :}END
+   |
+   FOR sentenciaAsignacion TO CDIGITO DO  error {:syntaxErrorManager.syntaxInfo ("Se esperaba una sentencia"); 
+   :}END
+   |
+   FOR sentenciaAsignacion TO ID DO sentenciasSubprograma  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'END'"); 
+   :}
+    |
+   FOR sentenciaAsignacion TO CDIGITO DO sentenciasSubprograma  error {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'END'"); 
+   :}
+
+;
+
+
+//Errores en las llamadas a funciones
+
+/*No se llegan a usar, va a saltar siempre el error del ;
+
+llamadaFuncion::= ID listaValores error{:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo '('");
+:} CPAREN
+
+|ID APAREN listaValores error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ')'");:}
+ ;
 */
+
+//writeString::= WRITESTRING APAREN CCADENA CPAREN;
+//writeInt::= WRITEINT APAREN ID CPAREN | WRITEINT APAREN CDIGITO CPAREN;
+
+writeString::= APAREN CCADENA error  {:syntaxErrorManager.syntaxInfo ("Se esperaba la palabra reservada 'WRITESTRING");
+  :} CPAREN
+  |
+  WRITESTRING error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo '('");
+  :} CCADENA CPAREN
+  |
+  WRITESTRING APAREN error {:syntaxErrorManager.syntaxInfo ("Se esperaba una cadena");
+  :}  CPAREN
+  |
+  WRITESTRING APAREN CCADENA error {:syntaxErrorManager.syntaxInfo ("Se esperaba el simbolo ')'");
+  :} 
+;
+
+
+
+
 
 
